@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")  // Common prefix for all routes, avoiding "mpesa"
+@RequestMapping("/mpesaapis")  // Common prefix for all routes
 public class MpesaController {
 
     @Autowired
@@ -34,6 +34,17 @@ public class MpesaController {
         try {
             String accessToken = mpesaService.getAccessToken();
             return mpesaService.simulateC2BPayment(accessToken, phoneNumber, amount, accountReference);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error occurred: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/b2cPayment")
+    public String initiateB2CPayment(@RequestParam String phoneNumber, @RequestParam String amount, @RequestParam String commandID, @RequestParam String remarks, @RequestParam String occasion) {
+        try {
+            String accessToken = mpesaService.getAccessToken();
+            return mpesaService.initiateB2CPayment(accessToken, phoneNumber, amount, commandID, remarks, occasion);
         } catch (Exception e) {
             e.printStackTrace();
             return "Error occurred: " + e.getMessage();
