@@ -3,6 +3,7 @@ package com.example.MpesaApis.controllers;
 
 import com.example.MpesaApis.MpesaService;
 import com.example.MpesaApis.service.MpesaBalanceInquiryService;
+import com.example.MpesaApis.service.MpesaReversalService;
 import com.example.MpesaApis.service.MpesaTransactionStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,9 @@ public class MpesaController {
 
     @Autowired
     private MpesaBalanceInquiryService balanceInquiryService;
+
+    @Autowired
+    private MpesaReversalService reversalService;
 
     @GetMapping("/getToken")
     public String getToken() {
@@ -105,6 +109,17 @@ public class MpesaController {
         // Here you can parse and store the validation information as needed
         return ResponseEntity.ok("Validation received");
     }
+    @PostMapping("/reversal")
+    public String performReversal(@RequestParam String transactionID, @RequestParam String amount, @RequestParam String receiverParty, @RequestParam String remarks) {
+        try {
+            String accessToken = reversalService.getAccessToken();
+            return reversalService.performReversal(accessToken, transactionID, amount, receiverParty, remarks);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error occurred: " + e.getMessage();
+        }
+    }
+
 
     @PostMapping("/confirmation")
     public ResponseEntity<String> handleConfirmation(@RequestBody String payload) {
