@@ -2,6 +2,7 @@
 package com.example.MpesaApis.controllers;
 
 import com.example.MpesaApis.MpesaService;
+import com.example.MpesaApis.service.MpesaBalanceInquiryService;
 import com.example.MpesaApis.service.MpesaTransactionStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,9 @@ public class MpesaController {
 
     @Autowired
     private MpesaTransactionStatusService transactionStatusService;
+
+    @Autowired
+    private MpesaBalanceInquiryService balanceInquiryService;
 
     @GetMapping("/getToken")
     public String getToken() {
@@ -59,6 +63,16 @@ public class MpesaController {
         try {
             String accessToken = mpesaService.getAccessToken();
             return mpesaService.initiateB2CPayment(accessToken, phoneNumber, amount, commandID, remarks, occasion);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error occurred: " + e.getMessage();
+        }
+    }
+    @PostMapping("/inquireBalance")
+    public String inquireBalance(@RequestParam String remarks) {
+        try {
+            String accessToken = balanceInquiryService.getAccessToken();
+            return balanceInquiryService.inquireBalance(accessToken, remarks);
         } catch (Exception e) {
             e.printStackTrace();
             return "Error occurred: " + e.getMessage();
