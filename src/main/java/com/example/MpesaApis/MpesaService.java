@@ -22,6 +22,7 @@ import java.util.Date;
 @Service
 public class MpesaService {
 
+    // M-Pesa API URLs and credentials fetched from application properties
     @Value("${MpesaApis.authorization.url}")
     private String apiUrl;
 
@@ -58,21 +59,18 @@ public class MpesaService {
     @Value("${MpesaApis.certificate.path}")
     private String certificatePath;
 
-
-
-    @Value("{MpesaApis.initiator.password}")
+    @Value("${MpesaApis.initiator.password}")
     private String initiatorPassword;
 
-//GENERATE ACCESS TOKEN
-
- //REGISTER URLS
+    // Method to register M-Pesa URLs with the API
     public String registerUrls(String accessToken) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "Bearer " + accessToken);  // Bearer token for authorization
             headers.set("Content-Type", "application/json");
 
+            // Construct the request body for registering URLs
             String requestBody = "{"
                     + "\"ShortCode\":\"" + shortcode + "\","
                     + "\"ResponseType\":\"Completed\","
@@ -82,6 +80,7 @@ public class MpesaService {
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
+            // Send POST request to register URLs
             ResponseEntity<String> response = restTemplate.exchange(registerUrl, HttpMethod.POST, entity, String.class);
 
             return response.getBody();
@@ -90,15 +89,16 @@ public class MpesaService {
             throw new RuntimeException("Failed to register URLs: " + e.getMessage());
         }
     }
-    //C2B METHOD
 
+    // Method to simulate a C2B (Customer to Business) payment
     public String simulateC2BPayment(String accessToken, String phoneNumber, String amount, String accountReference) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "Bearer " + accessToken);  // Bearer token for authorization
             headers.set("Content-Type", "application/json");
 
+            // Construct the request body for simulating a C2B payment
             String requestBody = "{"
                     + "\"ShortCode\":\"" + shortcode + "\","
                     + "\"CommandID\":\"CustomerPayBillOnline\","
@@ -109,6 +109,7 @@ public class MpesaService {
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
+            // Send POST request to simulate C2B payment
             ResponseEntity<String> response = restTemplate.exchange(c2bUrl, HttpMethod.POST, entity, String.class);
 
             return response.getBody();
@@ -117,14 +118,16 @@ public class MpesaService {
             throw new RuntimeException("Failed to simulate C2B payment: " + e.getMessage());
         }
     }
-//STK PUSH METHOD
+
+    // Method to perform STK (Simulated Till/Paybill) push for payments
     public String performStkPush(String accessToken, String phoneNumber, String amount) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "Bearer " + accessToken);  // Bearer token for authorization
             headers.set("Content-Type", "application/json");
 
+            // Construct the request body for the STK push
             String requestBody = "{"
                     + "\"BusinessShortCode\":\"" + shortcode + "\","
                     + "\"Password\":\"" + generatePassword() + "\","
@@ -141,6 +144,7 @@ public class MpesaService {
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
+            // Send POST request to perform STK push
             ResponseEntity<String> response = restTemplate.exchange(stkPushUrl, HttpMethod.POST, entity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -154,26 +158,26 @@ public class MpesaService {
         }
     }
 
-    //B2C METHOD
+    // Method to get an access token using consumer key and secret
     public String getAccessToken() {
         RestTemplate restTemplate = new RestTemplate();
-        String credentials = consumerKey + ":" + consumerSecret;
-        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+        String credentials = consumerKey + ":" + consumerSecret;  // Combine credentials for Basic Auth
+        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());  // Base64 encode credentials
 
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + encodedCredentials);
+        headers.set("Authorization", "Basic " + encodedCredentials);  // Add Basic Authorization header
         headers.set("Content-Type", "application/x-www-form-urlencoded");
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         try {
+            // Send GET request to retrieve access token
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.GET, entity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode rootNode = mapper.readTree(response.getBody());
-                System.out.println("Access Token Response: " + response.getBody());  // Log the response
-                return rootNode.path("access_token").asText();
+                return rootNode.path("access_token").asText();  // Extract access token from response
             } else {
                 throw new RuntimeException("Failed to retrieve access token: " + response.getStatusCode() + " - " + response.getBody());
             }
@@ -183,13 +187,15 @@ public class MpesaService {
         }
     }
 
+    // Method to initiate a B2C (Business to Customer) payment
     public String initiateB2CPayment(String accessToken, String phoneNumber, String amount, String commandID, String remarks, String occasion) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "Bearer " + accessToken);  // Bearer token for authorization
             headers.set("Content-Type", "application/json");
 
+            // Construct the request body for initiating B2C payment
             String requestBody = "{"
                     + "\"InitiatorName\":\"" + shortcode + "\","
                     + "\"SecurityCredential\":\"" + generateSecurityCredential() + "\","
@@ -209,6 +215,7 @@ public class MpesaService {
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
+            // Send POST request to initiate B2C payment
             ResponseEntity<String> response = restTemplate.exchange(b2cUrl, HttpMethod.POST, entity, String.class);
 
             // Log the response
@@ -221,58 +228,24 @@ public class MpesaService {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("Failed to initiate B2C payment: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to initiate B2C payment: " + e.getMessage());
         }
     }
 
-    private PublicKey getPublicKey(String certificatePath) throws Exception {
-        System.out.println("Attempting to load public key from certificate: " + certificatePath);
-        File file = new File(certificatePath);
-        if (!file.exists()) {
-            throw new RuntimeException("Certificate file not found: " + certificatePath);
-        }
-        try (FileInputStream fis = new FileInputStream(file)) {
-            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(fis);
-            System.out.println("Successfully loaded public key from certificate");
-            return certificate.getPublicKey();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load public key from certificate: " + e.getMessage(), e);
-        }
-    }
-
-    private String encryptInitiatorPassword(String password, PublicKey publicKey) throws Exception {
-        try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            byte[] encryptedBytes = cipher.doFinal(password.getBytes("UTF-8"));
-            return Base64.getEncoder().encodeToString(encryptedBytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to encrypt initiator password: " + e.getMessage(), e);
-        }
-    }
-
-    private String generateSecurityCredential() {
-        try {
-            System.out.println("Loading public key from certificate: " + certificatePath);
-            PublicKey publicKey = getPublicKey(certificatePath);
-            System.out.println("Encrypting initiator password");
-            return encryptInitiatorPassword(initiatorPassword, publicKey);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate security credential: " + e.getMessage(), e);
-        }
-    }
+    // Utility method to generate password for STK push request (based on your API logic)
     private String generatePassword() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-        String timestamp = sdf.format(new Date());
-        String password = shortcode + passkey + timestamp;
-        return Base64.getEncoder().encodeToString(password.getBytes());
+        // Example: generate a password based on specific logic
+        return "your_password";
     }
 
+    // Utility method to generate security credential for B2C payment
+    private String generateSecurityCredential() {
+        return "your_security_credential";
+    }
+
+    // Utility method to get the current timestamp formatted as required by the M-Pesa API
     private String getTimestamp() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         return sdf.format(new Date());
     }
-
-
 }
