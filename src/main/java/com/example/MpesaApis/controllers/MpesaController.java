@@ -1,6 +1,7 @@
 // File: src/main/java/com/example/MpesaApis/controllers/MpesaController.java
 package com.example.MpesaApis.controllers;
 
+import com.example.MpesaApis.MpesaBillPaymentService;
 import com.example.MpesaApis.MpesaService;
 import com.example.MpesaApis.service.MpesaBalanceInquiryService;
 import com.example.MpesaApis.service.MpesaReversalService;
@@ -24,6 +25,23 @@ public class MpesaController {
 
     @Autowired
     private MpesaReversalService reversalService;
+
+    @Autowired
+    private MpesaBillPaymentService billPaymentService;
+
+    @PostMapping("/paybill")
+    public String payBill(@RequestParam String amount,
+                          @RequestParam String accountReference,
+                          @RequestParam String partyA,
+                          @RequestParam String partyB) {
+        try {
+            String accessToken = billPaymentService.getAccessToken();
+            return billPaymentService.payBill(accessToken, amount, accountReference, partyA, partyB);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error occurred: " + e.getMessage();
+        }
+    }
 
     @GetMapping("/getToken")
     public String getToken() {
